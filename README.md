@@ -33,12 +33,11 @@ First run the prop recessing and analysis scripts:
 The scripts output files in multiple folders.
 
 Use the csv files in this folder to conduct the statistical analyses and
-check the supplementary material tables:
-    /Users/[yourusername]/Data/curR/All 3 visits/data_allVisits.csv'
-JASP files pointing to the csv files outputted are provided for running
-statistical analyses here:
-    /Users/[yourusername]/Data/curE/Visit1/Stats
+check the tables:
 
+    /Users/[yourusername]/Data/curR/All 3 visits/data_allVisits.csv'
+    
+JASP files pointing to the csv files outputted are also found in this folder.
 
 The data is sensitive & thus not provided here on GitHub -- please get in 
 touch with the authors if you require access to the data. Data sharing 
