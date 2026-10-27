@@ -34,7 +34,9 @@ The scripts output files in multiple folders.
 
 Use the csv files in this folder to conduct the statistical analyses and
 check the tables:
+
     /Users/[yourusername]/Data/curR/All 3 visits/data_allVisits.csv'
+    
 JASP files pointing to the csv files outputted are also found in this folder.
 
 The data is sensitive & thus not provided here on GitHub -- please get in 
