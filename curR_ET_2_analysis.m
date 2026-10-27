@@ -10,7 +10,7 @@ flagParallel = true;     % false/true  -- here we have to parralellise anyway fo
 
 minNtrialsPerCond      = 2;
 outlierThresholdMedian = 2.5;     % Default=2.5; for curE, we used 6 (more variables, fewer trials)
-minTimeOnTopScreen     = 1000;    % in ms
+minTimeOnTopScreen     = 2000;    % in ms
 
 %% Define more things
 % Define input/output paths (normally no need to change)
@@ -45,8 +45,6 @@ Va = fET_GetNtrials(S);
 S_good = S(~S.isBadFirstPhase & ~S.isBadReward & ~S.isOutlier,:);
 % --- Get results, grouping by session and trialType
 fprintf("Getting results per participant and trialType.... \n");
-
-%%
 var_in = "time1"; var_out = ["t_Box1", "logt_Box1"];
 V_Out1 = fET_GetResults(S_good, var_in, var_out);
 var_in = "time2"; var_out = "t_Box2_afterCurtain";
@@ -58,81 +56,6 @@ V_Out = outerjoin(V_Out3,V_Out2,keys="session", MergeKeys=true);
 V_Out = outerjoin(V_Out,V_Out1,keys="session", MergeKeys=true);
 % --- Now exclude participants if too few good trials or outlier
 V_Out = fET_GetOutliers_GroupLevel_curR(V_Out, trialTypes, minNtrialsPerCond, outlierThresholdMedian);
-
-if false
-    % --- Extract values on a subject level in table V for t2
-    V = varfun(@(x)mean(~isnan(x)), S_good, InputVariables="time1", GroupingVariables=["session" "trialType"]);
-    V.Properties.VariableNames(end-1:end) = ["Ntrials_B1" "prop_Box1"];
-    V = unstack(V, ["Ntrials_B1" "prop_Box1"], "trialType");
-    V.Ntrials_B1_LG(isnan(V.Ntrials_B1_LG)) = 0; V.Ntrials_B1_HG(isnan(V.Ntrials_B1_HG)) = 0;
-
-    Vb = outerjoin(Va,V,keys="session", MergeKeys=true);
-
-    V = varfun(@(x)mean(~isnan(x)), S_good, InputVariables="time2", GroupingVariables=["session" "trialType"]);
-    V.Properties.VariableNames(end-1:end) = ["Ntrials" "prop_OpenedBothBoxes"];
-    V = unstack(V, ["Ntrials" "prop_OpenedBothBoxes"], "trialType");
-    V.Ntrials_LG(isnan(V.Ntrials_LG)) = 0; V.Ntrials_HG(isnan(V.Ntrials_HG)) = 0;
-    V_final = outerjoin(Vb,V,keys="session", MergeKeys=true);
-
-
-    % Extract values on a subject level in table V1 for t1
-    % V1 = varfun(@(x)mean(~isnan(x)), S, InputVariables="time1", GroupingVariables=["session" "trialType"]);
-    % V1.Properties.VariableNames(end-1:end) = ["Ntrials" "prop_Box1"];
-    % V1 = unstack(V1, ["Ntrials" "prop_Box1"], "trialType");
-    % V1(V1.Ntrials_HG < 3 | V1.Ntrials_LG < 3,:) = [];
-    % V1(isnan(V1.Ntrials_HG) | isnan(V1.Ntrials_LG),:) = [];
-    % Prop box1 is 100% by definition of how we do our analysis
-
-
-    % --- Now save data per trialType in table L
-    Lb = varfun(@(x)mean(x,"omitnan"), S_good, InputVariables="time2", GroupingVariables=["session" "trialType"]);
-    Lb.t_Box2_afterCurtain = Lb.Fun_time2(:,1);
-    Lb.Fun_time2  = [];
-    Lb = unstack(Lb, ["GroupCount"  "t_Box2_afterCurtain"], "trialType");
-
-    L2 = varfun(@(x)mean(x,"omitnan"), S_good, InputVariables="difftime", GroupingVariables=["session" "trialType"]);
-    L2.t_Box2_afterB1 = L2.Fun_difftime(:,1);
-    L2.Fun_difftime  = [];
-    L2 = unstack(L2, ["GroupCount"  "t_Box2_afterB1"], "trialType");
-
-    L1 = varfun(@(x)mean(x,"omitnan"), S_good, InputVariables="time1", GroupingVariables=["session" "trialType"]);
-    L1.t_Box1 = L1.Fun_time1(:,1);
-    L1.Fun_time1 = [];
-    L1.logt_Box1 = log(L1.t_Box1);
-    L1 = unstack(L1, ["GroupCount"  "t_Box1" "logt_Box1"], "trialType");
-
-    L_final = [L2(:,[1,4:end]),L1(:,4:end),Lb(:,4:end)];
-
-    % --- Export
-    T_final = outerjoin(V_final,L_final,keys="session", MergeKeys=true);
-    T_final.prop_all   = (T_final.prop_OpenedBothBoxes_LG.*T_final.Ntrials_LG + T_final.prop_OpenedBothBoxes_HG.*T_final.Ntrials_HG)./(T_final.Ntrials_LG + T_final.Ntrials_HG);
-    T_final.t2B1_all   = (T_final.t_Box2_afterB1_LG.*T_final.Ntrials_LG + T_final.t_Box2_afterB1_HG.*T_final.Ntrials_HG)./(T_final.Ntrials_LG + T_final.Ntrials_HG);
-    T_final.t2_all   = (T_final.t_Box2_afterCurtain_LG.*T_final.Ntrials_LG + T_final.t_Box2_afterCurtain_LG.*T_final.Ntrials_HG)./(T_final.Ntrials_LG + T_final.Ntrials_HG);
-    T_final.t1_all     = (T_final.t_Box1_LG.*T_final.Ntrials_LG + T_final.t_Box1_HG.*T_final.Ntrials_HG)./(T_final.Ntrials_LG + T_final.Ntrials_HG);
-    T_final.logt1_all  = log(T_final.t1_all);
-    T_final.prop_diffScore   = T_final.prop_OpenedBothBoxes_LG - T_final.prop_OpenedBothBoxes_HG;
-    T_final.t2B1_diffScore   = T_final.t_Box2_afterB1_LG - T_final.t_Box2_afterB1_HG;
-    T_final.logt1_diffScore = T_final.logt_Box1_LG - T_final.logt_Box1_HG;
-    T_final.prop1_diffScore  = T_final.prop_Box1_LG - T_final.prop_Box1_HG;
-    V_Out = T_final;
-
-    T_final = V_Out;
-    % --- Exclude if too few good trials (per trialType)
-    V_Out.isExcluded_TooFewGoodTrials(:) = 0;
-    for iCond = 1:length(trialTypes)
-        V_Out.isExcluded_TooFewGoodTrials(V_Out.("Ntrials_" + trialTypes(iCond)) < minNtrialsPerCond) = 1;
-    end
-    T_final.isExcluded_Outlier(:) = 0;
-    T_final.isExcluded_Outlier(isoutlier(T_final.t_Box2_afterB1_LG,'median',ThresholdFactor=outlierThresholdMedian) ...
-        & ~T_final.isExcluded_TooFewGoodTrials) = 1;
-    T_final.isExcluded_Outlier(isoutlier(T_final.t_Box2_afterB1_HG,'median',ThresholdFactor=outlierThresholdMedian) ...
-        & ~T_final.isExcluded_TooFewGoodTrials) = 1;
-    T_final.isExcluded_Outlier(isoutlier(log(T_final.t_Box1_LG),'median',ThresholdFactor=outlierThresholdMedian) ...
-        & ~T_final.isExcluded_TooFewGoodTrials) = 1;
-    T_final.isExcluded_Outlier(isoutlier(log(T_final.t_Box1_HG),'median',ThresholdFactor=outlierThresholdMedian) ...
-        & ~T_final.isExcluded_TooFewGoodTrials) = 1;
-    V_Out = T_final;
-end
 
 %% Export
 fprintf("Exporting to csv files.... \n");
